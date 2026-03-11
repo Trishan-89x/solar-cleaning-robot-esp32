@@ -38,7 +38,7 @@ solar-cleaning-robot-esp32
 │
 ├── web_interface
 │ └── new_bot_web
-│ └── vercel_link.md
+│ └── new_bot_vercel_link.md
 │
 └── README.md
 
