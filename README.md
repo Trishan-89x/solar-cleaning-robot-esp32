@@ -44,3 +44,72 @@ The robot integrates multiple subsystems:
 ---
 
 ## Software Structure
+solar-cleaning-robot-esp32
+│
+├── code/
+│ ├── main_robot_code.ino
+│ └── new_drive_bot_code.ino
+│
+├── web_interface/
+│ └── control.html
+│
+├── hardware/
+│ └── circuit_diagrams
+│
+└── README.md
+
+---
+
+## Communication
+
+### WiFi Control
+The ESP32 creates a WiFi Access Point.
+
+SSID:
+ESP_BOT
+
+Commands sent via HTTP:
+fXXX → move forward
+rXXX → move reverse
+b → brake
+Where `XXX` is PWM speed (0–255).
+
+---
+
+### LoRa Telemetry
+
+Robot transmits:
+
+- ToF sensor distances
+- Pitch, roll, yaw
+- Accelerometer data
+- Gyroscope data
+- Magnetometer data
+- Robot status flags
+
+Transmission interval: **2 seconds**
+
+---
+
+## Safety Features
+
+- Obstacle detection stops drive motors automatically
+- IMU fall detection triggers emergency shutdown
+- Robot enters safe state after fall detection
+- Manual reset required after emergency
+
+---
+
+## Future Improvements
+
+- Autonomous navigation across full panel arrays
+- Dust detection using optical sensors
+- Solar-powered charging dock
+- Remote monitoring dashboard
+- Computer vision based edge detection
+
+---
+
+## Author
+
+Engineering project focused on embedded robotics, sensor fusion, and wireless telemetry using ESP32.
