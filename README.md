@@ -1,115 +1,272 @@
 # Solar Panel Cleaning Robot (ESP32)
 
-ESP32-based autonomous solar panel cleaning robot with obstacle detection, fall detection, LoRa telemetry, and WiFi web control. The robot is designed to clean solar panels using a rotating brush while safely navigating panel surfaces.
+ESP32-based solar panel cleaning robot with wireless control, obstacle detection, fall detection, and telemetry capabilities.  
+The project integrates embedded control, sensor fusion, wireless communication, and web-based robot control to create a remotely operated solar panel cleaning platform.
+
+The repository contains firmware for two robot versions:
+
+1. **Original Robot Firmware** – full system with sensors, LoRa telemetry, and safety monitoring.  
+2. **Drive Test Platform Firmware** – simplified robot used for drivetrain testing and web-based motion control.
 
 ---
 
-## Features
+# Features
 
-- Dual VL53L5CX Time-of-Flight sensors for obstacle detection
-- ICM-20948 9-axis IMU for orientation and fall detection
-- LoRa wireless telemetry for remote monitoring
-- ESP32 WiFi access point with web-based control interface
-- Motorized drive system for panel traversal
-- Brush motor for cleaning
-- Linear actuator for adjustable brush positioning
-- Kalman filter based sensor fusion for stable orientation estimation
-
----
-
-## Hardware Components
-
-- ESP32 microcontroller
-- 2 × VL53L5CX ToF distance sensors
-- ICM-20948 9-axis IMU
-- LoRa module (433 MHz)
-- DC motors for robot movement
-- Brush motor for cleaning
-- Linear actuator
-- Motor driver modules
-- Battery power system
+- ESP32-based embedded control system
+- WiFi access point for robot control
+- Web-based control interface
+- Dual Time-of-Flight obstacle detection
+- IMU-based orientation monitoring
+- Kalman filter sensor fusion
+- LoRa telemetry transmission
+- PWM motor control
+- Linear actuator control
+- Emergency fall detection system
 
 ---
 
-## System Architecture
+# Repository Structure
 
-The robot integrates multiple subsystems:
-
-- **Obstacle Detection:** Dual ToF sensors measure distances ahead of the robot.
-- **Fall Detection:** IMU pitch, roll, and yaw monitoring detects abnormal orientation.
-- **Wireless Communication:** LoRa transmits telemetry data including sensor values and robot status.
-- **Web Control:** ESP32 runs a WiFi access point allowing manual control through a web interface.
-- **Motor Control:** PWM-based control for drive motors, brush motor, and actuator.
-
----
-
-## Software Structure
 solar-cleaning-robot-esp32
 │
-├── code/
-│ ├── main_robot_code.ino
+├── code
+│ ├── old_bot
+│ │ └── main_robot_code.ino
+│ │
+│ └── new_bot
 │ └── new_drive_bot_code.ino
 │
-├── web_interface/
-│ └── control.html
-│
-├── hardware/
-│ └── circuit_diagrams
+├── web_interface
+│ └── new_bot_web
+│ └── vercel_link.md
 │
 └── README.md
 
+
 ---
 
-## Communication
+# Robot Firmware
 
-### WiFi Control
-The ESP32 creates a WiFi Access Point.
+## 1. Original Robot Firmware
 
-SSID:
-ESP_BOT
+File:  
+`code/old_bot/main_robot_code.ino`
 
-Commands sent via HTTP:
+This firmware controls the complete solar panel cleaning robot system and integrates sensor monitoring, safety logic, motor control, and wireless communication.
+
+### Sensor System
+
+The robot uses multiple sensors for environmental awareness and safety:
+
+**VL53L5CX Time-of-Flight Sensors**
+
+Two ToF sensors measure distances in front of the robot using an 8×8 ranging grid.  
+The firmware calculates the average distance of the center pixels to determine the obstacle distance directly ahead.
+
+If an object is detected below the configured threshold distance, the robot immediately stops its drive and brush motors.
+
+---
+
+**ICM-20948 9-Axis IMU**
+
+The IMU provides:
+
+- Accelerometer data
+- Gyroscope data
+- Magnetometer data
+
+These measurements are used to calculate robot orientation.
+
+Pitch and roll are derived from accelerometer data, while yaw is calculated using tilt-compensated magnetometer heading.
+
+---
+
+### Sensor Fusion
+
+To obtain stable orientation measurements, the firmware implements **Kalman filtering** to fuse accelerometer, gyroscope, and magnetometer data.
+
+The Kalman filters produce smoothed estimates of:
+
+- Roll
+- Pitch
+- Yaw
+
+This reduces noise and drift from individual sensors.
+
+---
+
+### Fall Detection System
+
+When the robot starts, it records its initial orientation on the solar panel surface.
+
+During operation, the firmware continuously compares the current orientation with the reference orientation.
+
+If orientation changes exceed safe thresholds, the system assumes the robot has slipped or fallen.
+
+If a fall is detected:
+
+- All motors stop immediately
+- Emergency state is triggered
+- A LoRa telemetry packet is transmitted
+- The robot remains halted for safety
+
+---
+
+### Motor and Actuator Control
+
+The firmware controls three types of actuators:
+
+**Drive Motor**
+
+Controls robot movement across the solar panel surface.
+
+**Brush Motor**
+
+Rotates the cleaning brush used to remove dust and debris.
+
+**Linear Actuator**
+
+Adjusts the brush position relative to the solar panel surface.
+
+All motors are controlled using PWM signals generated by the ESP32.
+
+---
+
+### WiFi Control Interface
+
+The ESP32 creates a WiFi Access Point that allows direct control of the robot.
+
+Users connect to the robot network and send commands through a web interface.
+
+Example commands:
 fXXX → move forward
 rXXX → move reverse
 b → brake
-Where `XXX` is PWM speed (0–255).
+cXXX → run brush
+s → stop brush
+Where `XXX` represents PWM motor speed from **0–255**.
 
 ---
 
 ### LoRa Telemetry
 
-Robot transmits:
+The robot transmits telemetry data through a LoRa module.
+
+Telemetry includes:
 
 - ToF sensor distances
-- Pitch, roll, yaw
+- Orientation angles
 - Accelerometer data
 - Gyroscope data
 - Magnetometer data
 - Robot status flags
+- Motor states
 
-Transmission interval: **2 seconds**
-
----
-
-## Safety Features
-
-- Obstacle detection stops drive motors automatically
-- IMU fall detection triggers emergency shutdown
-- Robot enters safe state after fall detection
-- Manual reset required after emergency
+Telemetry packets are transmitted periodically for remote monitoring.
 
 ---
 
-## Future Improvements
+### Safety Mechanisms
 
-- Autonomous navigation across full panel arrays
-- Dust detection using optical sensors
-- Solar-powered charging dock
-- Remote monitoring dashboard
-- Computer vision based edge detection
+The firmware includes several safety features:
+
+- Automatic obstacle detection
+- Fall detection using orientation monitoring
+- Emergency motor shutdown
+- Safe halted state after fall detection
+
+These features are critical for safe operation on inclined solar panel surfaces.
 
 ---
 
-## Author
+# 2. New Robot Firmware (Drive Test Platform)
 
-Engineering project focused on embedded robotics, sensor fusion, and wireless telemetry using ESP32.
+File:  
+`code/new_bot/new_drive_bot_code.ino`
+
+This firmware controls the simplified drivetrain test platform used during development of the next generation robot.
+
+The program implements a lightweight WiFi control system that allows remote driving of the robot.
+
+---
+
+### WiFi Access Point
+
+The ESP32 operates in **Access Point mode**, creating a network that users can connect to directly.
+
+After connecting, the user can control the robot through HTTP commands sent from a web interface.
+
+---
+
+### Command System
+
+Commands are received as HTTP requests containing a `cmd` parameter.
+
+The first character represents the command and the remaining digits represent motor speed.
+
+Supported commands:
+fXXX → move forward
+rXXX → move reverse
+b → brake
+Where `XXX` is a PWM speed value between **0–255**.
+
+---
+
+### Differential Drive System
+
+The robot uses a two-motor differential drive configuration:
+
+- Left motor
+- Right motor
+
+Each motor has:
+
+- Direction control pin
+- PWM speed control pin
+
+The firmware adjusts these signals to control robot motion.
+
+---
+
+# Web Control Interfaces
+
+Two web control systems are used in this project.
+
+---
+
+## Old Robot Interface
+
+The original robot uses a locally stored HTML interface located in:
+web_interface/old_bot_web/
+
+This interface communicates with the ESP32 WiFi access point and sends control commands.
+
+---
+
+## New Robot Interface
+
+The new robot uses an online web application.
+
+Live interface:
+
+https://solarbotwebapp.vercel.app
+
+The web application sends HTTP commands to the ESP32 access point for robot control.
+
+---
+
+# Communication Overview
+
+### WiFi
+
+Used for direct user control through the web interface.
+
+### LoRa
+
+Used for telemetry transmission and remote monitoring.
+
+---
+
+# Author
+
+Embedded robotics project focused on sensor fusion, wireless communication, and autonomous solar panel cleaning systems using ESP32.
